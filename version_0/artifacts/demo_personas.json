@@ -1,0 +1,270 @@
+{
+  "ravi": {
+    "score": 551,
+    "tier": "Fair",
+    "default_probability": 0.6573,
+    "approval_probability": 0.3427,
+    "loan_eligible": true,
+    "top_factors_hurting": [
+      {
+        "feature": "EMPLOYMENT_YEARS",
+        "display_name": "Years employed",
+        "value": 0.8,
+        "shap": 0.3507823646068573
+      },
+      {
+        "feature": "CREDIT_TERM",
+        "display_name": "Loan repayment speed",
+        "value": 0.046666355557629616,
+        "shap": 0.27770811319351196
+      },
+      {
+        "feature": "OCCUPATION_TYPE",
+        "display_name": "Occupation category",
+        "value": 4.0,
+        "shap": 0.13473732769489288
+      }
+    ],
+    "top_factors_helping": [
+      {
+        "feature": "AMT_ANNUITY",
+        "display_name": "Monthly EMI amount",
+        "value": 7000.0,
+        "shap": -0.20652396976947784
+      },
+      {
+        "feature": "FLAG_PHONE",
+        "display_name": "Has home phone",
+        "value": 1.0,
+        "shap": -0.10559727996587753
+      },
+      {
+        "feature": "DOWN_PAYMENT_RATIO",
+        "display_name": "Down payment ratio",
+        "value": 0.1111102880719402,
+        "shap": -0.10341756045818329
+      }
+    ],
+    "moves": [
+      {
+        "feature": "EMPLOYMENT_YEARS",
+        "label": "Job tenure",
+        "advice": "Maintain your current employment for {delta:.0f} more months",
+        "score_delta": 1,
+        "new_score": 552,
+        "timeline_days": 90,
+        "effort": "low",
+        "original_val": 0.8,
+        "new_val": 1.2000000000000002
+      }
+    ],
+    "trajectory": {
+      "0": {
+        "score": 551,
+        "tier": "Fair",
+        "moves_applied": 0
+      },
+      "30": {
+        "score": 551,
+        "tier": "Fair",
+        "moves_applied": 0
+      },
+      "60": {
+        "score": 551,
+        "tier": "Fair",
+        "moves_applied": 0
+      },
+      "90": {
+        "score": 552,
+        "tier": "Fair",
+        "moves_applied": 1
+      }
+    }
+  },
+  "priya": {
+    "score": 656,
+    "tier": "Good",
+    "default_probability": 0.3205,
+    "approval_probability": 0.6795,
+    "loan_eligible": true,
+    "top_factors_hurting": [
+      {
+        "feature": "CREDIT_TERM",
+        "display_name": "Loan repayment speed",
+        "value": 0.04999950000499995,
+        "shap": 0.32543325424194336
+      },
+      {
+        "feature": "EMPLOYMENT_YEARS",
+        "display_name": "Years employed",
+        "value": 3.0,
+        "shap": 0.19942162930965424
+      },
+      {
+        "feature": "FLAG_OWN_CAR",
+        "display_name": "Owns a vehicle",
+        "value": 0.0,
+        "shap": 0.08103793114423752
+      }
+    ],
+    "top_factors_helping": [
+      {
+        "feature": "AMT_ANNUITY",
+        "display_name": "Monthly EMI amount",
+        "value": 5000.0,
+        "shap": -0.36259859800338745
+      },
+      {
+        "feature": "NAME_EDUCATION_TYPE",
+        "display_name": "Education level",
+        "value": 1.0,
+        "shap": -0.36019429564476013
+      },
+      {
+        "feature": "AMT_CREDIT",
+        "display_name": "Loan amount requested",
+        "value": 100000.0,
+        "shap": -0.15754567086696625
+      }
+    ],
+    "moves": [
+      {
+        "feature": "EMPLOYMENT_YEARS",
+        "label": "Job tenure",
+        "advice": "Maintain your current employment for {delta:.0f} more months",
+        "score_delta": 8,
+        "new_score": 664,
+        "timeline_days": 90,
+        "effort": "low",
+        "original_val": 3.0,
+        "new_val": 4.5
+      },
+      {
+        "feature": "CREDIT_INCOME_RATIO",
+        "label": "Loan-to-income ratio",
+        "advice": "Apply for a smaller loan amount (reduce by {delta_pct:.0f}%)",
+        "score_delta": 2,
+        "new_score": 658,
+        "timeline_days": 0,
+        "effort": "low",
+        "original_val": 0.8333263889467588,
+        "new_val": 0.6666611111574071
+      },
+      {
+        "feature": "AMT_INCOME_TOTAL",
+        "label": "Annual income",
+        "advice": "Increase declared income (add secondary income source)",
+        "score_delta": 1,
+        "new_score": 657,
+        "timeline_days": 90,
+        "effort": "medium",
+        "original_val": 120000.0,
+        "new_val": 144000.0
+      }
+    ],
+    "trajectory": {
+      "0": {
+        "score": 658,
+        "tier": "Good",
+        "moves_applied": 1
+      },
+      "30": {
+        "score": 658,
+        "tier": "Good",
+        "moves_applied": 1
+      },
+      "60": {
+        "score": 658,
+        "tier": "Good",
+        "moves_applied": 1
+      },
+      "90": {
+        "score": 667,
+        "tier": "Good",
+        "moves_applied": 3
+      }
+    }
+  },
+  "deepa": {
+    "score": 642,
+    "tier": "Fair",
+    "default_probability": 0.3615,
+    "approval_probability": 0.6385,
+    "loan_eligible": true,
+    "top_factors_hurting": [
+      {
+        "feature": "EMPLOYMENT_YEARS",
+        "display_name": "Years employed",
+        "value": 2.5,
+        "shap": 0.1828552931547165
+      },
+      {
+        "feature": "NAME_HOUSING_TYPE",
+        "display_name": "Housing situation",
+        "value": 4.0,
+        "shap": 0.11862263083457947
+      },
+      {
+        "feature": "FLAG_OWN_CAR",
+        "display_name": "Owns a vehicle",
+        "value": 0.0,
+        "shap": 0.06982618570327759
+      }
+    ],
+    "top_factors_helping": [
+      {
+        "feature": "NAME_EDUCATION_TYPE",
+        "display_name": "Education level",
+        "value": 1.0,
+        "shap": -0.3124200403690338
+      },
+      {
+        "feature": "AMT_ANNUITY",
+        "display_name": "Monthly EMI amount",
+        "value": 12000.0,
+        "shap": -0.21717317402362823
+      },
+      {
+        "feature": "CREDIT_TERM",
+        "display_name": "Loan repayment speed",
+        "value": 0.03999986666711111,
+        "shap": -0.1414615660905838
+      }
+    ],
+    "moves": [
+      {
+        "feature": "EMPLOYMENT_YEARS",
+        "label": "Job tenure",
+        "advice": "Maintain your current employment for {delta:.0f} more months",
+        "score_delta": 8,
+        "new_score": 650,
+        "timeline_days": 90,
+        "effort": "low",
+        "original_val": 2.5,
+        "new_val": 3.75
+      }
+    ],
+    "trajectory": {
+      "0": {
+        "score": 642,
+        "tier": "Fair",
+        "moves_applied": 0
+      },
+      "30": {
+        "score": 642,
+        "tier": "Fair",
+        "moves_applied": 0
+      },
+      "60": {
+        "score": 642,
+        "tier": "Fair",
+        "moves_applied": 0
+      },
+      "90": {
+        "score": 650,
+        "tier": "Good",
+        "moves_applied": 1
+      }
+    }
+  }
+}

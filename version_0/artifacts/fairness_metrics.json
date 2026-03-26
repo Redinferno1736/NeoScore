@@ -1,0 +1,6 @@
+{
+  "disparate_impact": 0.7038,
+  "statistical_parity_diff": -0.2213,
+  "equal_opportunity_diff": -0.2101,
+  "fair": false
+}
