@@ -74,10 +74,17 @@ export default function LandingPage() {
   const [liveUsers, setLiveUsers] = useState(12438);
   const [activeTab, setActiveTab] = useState("Score");
 
+  const handleLogin = () => {
+      window.location.href = "http://localhost:5000/auth/login/google";
+  };
+
   useEffect(() => {
     const iv = setInterval(() => setLiveUsers(p => p + Math.floor(Math.random() * 3)), 4000);
     return () => clearInterval(iv);
   }, []);
+
+
+  
 
   const fadeUp = (delay = 0) => {
     const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
@@ -156,12 +163,12 @@ export default function LandingPage() {
 
           {/* CTA row */}
           <motion.div {...fadeUp(0.55)} className="flex items-center gap-5">
-            <Link href="/home">
-              <Button variant="accent" size="lg" className="group">
-                GET STARTED
-                <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform duration-200" />
-              </Button>
-            </Link>
+            {/* Replaced <Link> with onClick handler */}
+            <Button onClick={handleLogin} variant="accent" size="lg" className="group">
+              SIGN IN WITH GOOGLE
+              <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+            </Button>
+            
             <button className="text-xs uppercase tracking-[0.18em] font-semibold flex items-center gap-2 transition-opacity hover:opacity-60"
               style={{ color: "#A8A8A8" }}>
               View Demo
@@ -342,7 +349,7 @@ export default function LandingPage() {
             </div>
           </div>
           <p className="text-xs leading-relaxed" style={{ color: "#A8A8A8" }}>
-            Improving their financial health with NeoScore's explainable AI.
+            Improving their financial health with NeoScore&apos;s explainable AI.
           </p>
         </div>
 

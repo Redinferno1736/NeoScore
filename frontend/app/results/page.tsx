@@ -114,26 +114,49 @@ export default function ResultsPage() {
             </h3>
             
             <div className="space-y-6">
+              {/* 1. INCOME SLIDER */}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted">Income</span>
                   <span className="font-bold text-text">${localProfile.income.toLocaleString()}</span>
                 </div>
-                <Slider min={15000} max={300000} step={1000} value={localProfile.income} onChange={(v) => handleWhatIfChange("income", v)} />
+                <Slider 
+                  min={15000} 
+                  max={300000} 
+                  step={1000} 
+                  value={localProfile.income} 
+                  onChange={(v) => handleWhatIfChange("income", v)} 
+                />
               </div>
+
+              {/* 2. DTI RATIO SLIDER */}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted">DTI Ratio</span>
                   <span className="font-bold text-text">{localProfile.dti}%</span>
                 </div>
-                <Slider min={0} max={100} step={1} value={localProfile.dti} onChange={(v) => handleWhatIfChange("dti", v)} />
+                <Slider 
+                  min={0} 
+                  max={100} 
+                  step={1} 
+                  value={localProfile.dti} 
+                  onChange={(v) => handleWhatIfChange("dti", v)} 
+                />
               </div>
+
+              {/* 3. SAVINGS RATIO SLIDER */}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted">Savings Ratio</span>
                   <span className="font-bold text-text">{localProfile.savingsRatio}%</span>
                 </div>
-                <Slider min={0} max={100} step={1} value={localProfile.savingsRatio} onChange={(v) => handleWhatIfChange("savingsRatio", v)} />
+                <Slider 
+                  min={0} 
+                  max={100} 
+                  step={1} 
+                  value={localProfile.savingsRatio} 
+                  onChange={(v) => handleWhatIfChange("savingsRatio", v)} 
+                />
               </div>
             </div>
           </Card>

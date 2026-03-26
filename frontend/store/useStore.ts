@@ -1,6 +1,7 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { submitScore, fetchRecommendations } from "@/lib/api";
 
+// 1. Define the TypeScript interfaces
 export interface Profile {
   income: number;
   dti: number;
@@ -14,150 +15,115 @@ export interface Profile {
   educationLevel: string;
 }
 
-export interface Recommendation {
-  action: string;
-  effort: 'Low' | 'Medium' | 'High';
-  impact: number;
-}
-
-export interface FeatureImpact {
-  feature: string;
-  impact: number;
-  positive: boolean;
-}
-
-export interface Result {
-  score: number;
-  maxScore: number;
-  risk: 'Low' | 'Medium' | 'High';
-  featureImpacts: FeatureImpact[];
-  recommendations: Recommendation[];
-  coachMessage: string;
-}
-
-export interface HistoryEntry {
-  id: string;
-  timestamp: string;
-  personaName: string | null;
-  profile: Profile;
-  result: Result;
-}
-
 interface StoreState {
   profile: Profile;
-  result: Result | null;
-  history: HistoryEntry[];
-  selectedPersona: string | null;
-  isLoading: boolean;
-  
+  result: any | null; // Changed from scoreData to result to match your UI
+  isLoading: boolean; // Added loading state for your spinner and circle animation
+  activePersona: string | null;
   updateProfileField: <K extends keyof Profile>(field: K, value: Profile[K]) => void;
-  setProfile: (profile: Profile, personaName?: string | null) => void;
+  setProfile: (profile: Profile, personaName?: string) => void;
   predict: () => Promise<void>;
-  deleteHistoryEntry: (id: string) => void;
-  clearHistory: () => void;
 }
 
-export const defaultProfile: Profile = {
-  income: 60000,
-  dti: 30,
-  savingsRatio: 20,
-  employmentDuration: '1-3 years',
-  age: 30,
+// 2. Set a default blank state
+const defaultProfile: Profile = {
+  income: 50000,
+  dti: 20,
+  savingsRatio: 10,
+  employmentDuration: "1-3 years",
+  age: 28,
   ownsHouse: false,
   ownsCar: false,
   familySize: 1,
   children: 0,
-  educationLevel: 'Bachelor',
+  educationLevel: "Bachelor",
 };
 
-// Mock prediction logic
-const mockPredict = async (profile: Profile): Promise<Result> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Very basic Mock ML logic for demo purposes
-      let score = 500;
-      score += (profile.income / 1000) * 1.5;
-      score -= profile.dti * 2.5;
-      score += profile.savingsRatio * 3;
-      if (profile.ownsHouse) score += 40;
-      if (profile.ownsCar) score += 15;
-      if (profile.educationLevel === 'PhD' || profile.educationLevel === 'Master') score += 20;
+// 3. Create the global store
+export const useStore = create<StoreState>((set, get) => ({
+  profile: defaultProfile,
+  result: null, 
+  isLoading: false, 
+  activePersona: null,
 
-      score = Math.min(Math.max(Math.round(score), 300), 900);
-      
-      let risk: 'Low' | 'Medium' | 'High' = 'Medium';
-      if (score > 720) risk = 'Low';
-      if (score < 580) risk = 'High';
+  updateProfileField: (field, value) =>
+    set((state) => ({
+      profile: { ...state.profile, [field]: value },
+    })),
 
-      resolve({
-        score,
-        maxScore: Math.min(score + 140, 900),
-        risk,
-        featureImpacts: [
-          { feature: 'Income Level', impact: Math.floor(profile.income / 2500), positive: true },
-          { feature: 'Debt-to-Income', impact: Math.floor(profile.dti * 1.5), positive: false },
-          { feature: 'Savings Habit', impact: Math.floor(profile.savingsRatio * 2), positive: true },
-        ],
-        recommendations: [
-          { action: 'Pay down credit card balances', effort: 'Medium', impact: 45 },
-          { action: 'Increase monthly savings contribution', effort: 'Low', impact: 15 },
-          { action: 'Avoid new credit inquiries for 6 months', effort: 'High', impact: 10 },
-        ],
-        coachMessage: `You are in the ${risk.toLowerCase()} risk category. Focusing on keeping your debt-to-income ratio low while increasing your savings will yield the best improvements in your score.`,
-      });
-    }, 600); // 600ms network simulated delay
-  });
-};
+  setProfile: (profile, personaName) =>
+    set({ profile, activePersona: personaName || null }),
 
-export const useStore = create<StoreState>()(
-  persist(
-    (set, get) => ({
-      profile: defaultProfile,
-      result: null,
-      history: [],
-      selectedPersona: null,
-      isLoading: false,
+  predict: async () => {
+    set({ isLoading: true }); // Start the loading spinner on the UI
+    const { profile } = get();
 
-      updateProfileField: (field, value) => {
-        set((state) => ({
-          profile: { ...state.profile, [field]: value },
-          selectedPersona: null, // manual override drops persona tag
-        }));
-      },
+    // Map React state to Flask backend column names
+    const backendPayload = {
+      AMT_INCOME_TOTAL: profile.income,
+      DEBT_TO_INCOME: profile.dti / 100, 
+      AGE_YEARS: profile.age,
+      FLAG_OWN_REALTY: profile.ownsHouse ? 1 : 0,
+      FLAG_OWN_CAR: profile.ownsCar ? 1 : 0,
+      CNT_FAM_MEMBERS: profile.familySize,
+      CNT_CHILDREN: profile.children,
+      NAME_EDUCATION_TYPE: profile.educationLevel,
+      EMPLOYED_YEARS:
+        profile.employmentDuration === "< 1 year" ? 0.5
+          : profile.employmentDuration === "1-3 years" ? 2
+          : profile.employmentDuration === "3-5 years" ? 4
+          : 6,
+    };
 
-      setProfile: (profile, personaName = null) => {
-        set({ profile, selectedPersona: personaName });
-      },
+    try {
+      // 1. Get the real score and SHAP data from Flask
+      const apiResponse = await submitScore(backendPayload);
 
-      predict: async () => {
-        set({ isLoading: true });
-        const { profile, selectedPersona } = get();
-        const result = await mockPredict(profile);
+      // 2. Ask the AI Counterfactual Engine how to improve this specific score
+      let aiRecommendations = [];
+      try {
+          const cfResponse = await fetchRecommendations(backendPayload);
+          // Map the Python response ('moves') to your React UI format
+          if (cfResponse.moves) {
+              aiRecommendations = cfResponse.moves.map((move: any) => ({
+                  action: move.label,
+                  // Ensure formatting matches your green/yellow/red UI tags
+                  effort: move.effort.charAt(0).toUpperCase() + move.effort.slice(1), 
+                  impact: Math.round(move.score_delta)
+              }));
+          }
+      } catch (cfError) {
+          console.warn("Counterfactual engine unavailable, using fallbacks.", cfError);
+      }
+
+      // 3. Map everything exactly as your ResultsPage.tsx expects
+      const mappedResult = {
+        score: apiResponse.score,
+        maxScore: 900,
+        risk: apiResponse.risk_tier === "Excellent" || apiResponse.risk_tier === "Good" ? "Low" 
+            : apiResponse.risk_tier === "Fair" ? "Medium" 
+            : "High",
+        coachMessage: apiResponse.reasoning, 
         
-        const historyEntry: HistoryEntry = {
-          id: Date.now().toString(),
-          timestamp: new Date().toISOString(),
-          personaName: selectedPersona,
-          profile,
-          result,
-        };
+        featureImpacts: apiResponse.top_features.map((f: any) => ({
+          feature: f.feature,
+          impact: Math.round(Math.abs(f.impact * 10)), 
+          positive: f.impact > 0
+        })),
 
-        set((state) => ({
-          result,
-          isLoading: false,
-          history: [historyEntry, ...state.history],
-        }));
-      },
+        // 4. Inject the REAL AI recommendations (or fallbacks if it failed)
+        recommendations: aiRecommendations.length > 0 ? aiRecommendations : [
+          { action: "Decrease Debt-to-Income by 5%", effort: "Medium", impact: 25 },
+          { action: "Increase Savings Ratio to 20%", effort: "High", impact: 40 },
+          { action: "Maintain current employment for 1 yr", effort: "Low", impact: 15 }
+        ]
+      };
 
-      deleteHistoryEntry: (id) => set((state) => ({
-        history: state.history.filter((entry) => entry.id !== id),
-      })),
+      set({ result: mappedResult, isLoading: false });
 
-      clearHistory: () => set({ history: [] }),
-    }),
-    {
-      name: 'neoscore-global-store',
-      // In a real app we might only persist history, but persisting profile and result makes the back button seamless.
+    } catch (error) {
+      console.error("Failed to predict score:", error);
+      set({ isLoading: false }); 
     }
-  )
-);
+  },
+}));
