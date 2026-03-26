@@ -1,0 +1,11 @@
+data
+
+*.pkl
+
+*.csv
+
+*.parquet
+
+old stuff/artifacts
+
+old stuff/artifacts_prod
