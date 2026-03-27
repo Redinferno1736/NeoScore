@@ -33,6 +33,25 @@ It combines a **knowledge-distillation ML pipeline**, a **real-time scoring API*
 
 ---
 
+## 📦 Pretrained Models
+
+All required trained models and artifacts (teacher model, student model, calibration files, etc.) are available here:
+
+🔗 https://drive.google.com/drive/folders/1ouQRWfIVffsxAdwKYrOwVtDnvFfOJS5q?usp=sharing
+
+### How to Use
+
+1. Download all files from the Drive folder  
+2. Place them inside the backend artifacts directory:
+
+```bash
+backend/artifacts/
+```
+
+3. Ensure filenames match those expected in your code (e.g., `student_model.pkl`, `calibrator.pkl`, etc.)
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer               | Technologies                                        |
