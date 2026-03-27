@@ -11,3 +11,9 @@ old stuff/artifacts
 old stuff/artifacts_prod
 
 *.env
+
+# Windows metadata files
+*:Zone.Identifier
+
+# Numpy artifacts (optional but recommended)
+*.npy
