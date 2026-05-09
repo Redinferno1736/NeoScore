@@ -107,7 +107,7 @@ export default function ResultsPage() {
   const recommendations = [
     ...(result.explanation?.drivers_negative ?? []).map((d) => ({
       action: d.text,
-      effort: "Medium" as const,
+      effort: "Medium" as string,
       impact: "↑ Score",
     })),
   ].slice(0, 3);

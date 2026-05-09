@@ -121,7 +121,7 @@ export const useStore = create<NeoScoreState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  setProfile: (profile, personaName = null) =>
+  setProfile: (profile, personaName = undefined) =>
     set({ profile, personaName }),
 
   updateProfileField: (key, value) =>
