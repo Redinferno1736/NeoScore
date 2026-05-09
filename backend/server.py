@@ -806,25 +806,37 @@ def explain_with_llm(result: dict) -> str:
     ]) or "No actionable factors available."
 
     prompt = (
-        "Here's what's going on with your score:\n\n"
-        "Credit Score: {} out of 900\n"
-        "Risk Category: {}\n\n"
-        "Key factors (ONLY use these — do not assume or invent anything else):\n"
-        "{}\n\n"
-        "Write a short, plain-English explanation (under 120 words). Rules:\n"
-        "- Start with: 'Here\u2019s what\u2019s going on with your score:'\n"
-        "- ONLY refer to the factors listed above — nothing else\n"
-        "- DO NOT mention age, number of children, region, or any factor not in the list\n"
-        "- DO NOT hallucinate factors like credit utilisation, credit card debt, or payment history\n"
-        "- Mention 1-2 things working in the person\u2019s favour\n"
-        "- Mention 1-2 things dragging the score down\n"
-        "- Give 2 DIFFERENT actionable suggestions based on DIFFERENT factors\n"
-        "- Each suggestion must be based on a different factor from the list\n"
-        "- DO NOT repeat the same idea (e.g. job stability twice)\n"
-        "- Prefer variety across income, loan amount, EMI, assets, stability\n"
-        "- Use 'your' to address the person directly\n"
-        "- No technical terms like SHAP, probability, or model"
-    ).format(result["score"], result["risk_tier"], top_features_text)
+    "Here\u2019s what\u2019s going on with your score:\n\n"
+    "Credit Score: {score} out of 900\n"
+    "Risk Category: {tier}\n"
+    "Loan Decision: {decision}\n\n"
+    "IMPORTANT CONTEXT: This is an ALTERNATIVE credit score for people with NO credit cards "
+    "and NO formal credit history. Do NOT mention or suggest anything related to credit cards, "
+    "credit utilisation, credit card debt, or payment history. These users build creditworthiness "
+    "through income stability, employment tenure, loan sizing, asset ownership, and EMI management.\n\n"
+    "Key factors driving this score (ONLY use these \u2014 do not assume or invent anything else):\n"
+    "{top_features_text}\n\n"
+    "Write a short, plain-English explanation (under 120 words). Rules:\n"
+    "- Start with: \u2018Here\u2019s what\u2019s going on with your score:\u2019\n"
+    "- ONLY refer to the factors listed above \u2014 nothing else\n"
+    "- DO NOT mention age, number of children, region, or any factor not in the list\n"
+    "- DO NOT hallucinate factors like credit utilisation, credit card debt, or payment history\n"
+    "- Mention 1-2 things working in the person\u2019s favour\n"
+    "- Mention 1-2 things dragging the score down\n"
+    "- Give 2 DIFFERENT actionable suggestions based on DIFFERENT factors\n"
+    "- Each suggestion must be based on a different factor from the list\n"
+    "- DO NOT repeat the same idea (e.g. job stability twice)\n"
+    "- Suggestions must be relevant for someone with no credit card: "
+    "  focus on income growth, loan amount reduction, EMI management, "
+    "  employment tenure, or asset acquisition\n"
+    "- Use \u2018your\u2019 to address the person directly\n"
+    "- No technical terms like SHAP, probability, or model"
+).format(
+    score=result["score"],
+    tier=result["risk_tier"],
+    decision=result["final_decision"],
+    top_features_text=top_features_text,
+)
 
     try:
         res = http.post(
@@ -833,7 +845,7 @@ def explain_with_llm(result: dict) -> str:
             json={
                 "model": "llama-3.3-70b-versatile",
                 "messages": [
-                    {"role": "system", "content": "You are a helpful financial advisor. Be concise and empathetic."},
+                    {"role": "system", "content": "You are a helpful financial advisor for alternative credit scoring in India. Users have no credit cards or formal credit history. Be concise and empathetic. Never suggest credit card related actions."},
                     {"role": "user",   "content": prompt},
                 ],
                 "max_tokens": 200,
@@ -1421,12 +1433,19 @@ def score_trend():
 
 
 # ─── AI Chat (Groq) ───────────────────────────────────────────────────────────
-SYSTEM_PROMPT = """You are NeoScore's financial AI coach.
-You help users understand their credit score, explain what the features mean,
-and give practical, India-specific advice on improving creditworthiness.
-Be concise, empathetic, and actionable. Avoid jargon.
-When mentioning scores, use the 300-900 scale.
-Reference specific features from the user's profile when relevant.
+SYSTEM_PROMPT = """You are NeoScore's financial AI coach for alternative credit scoring in India.
+NeoScore serves users who have NO credit cards and NO formal credit history.
+You help users understand their NeoScore (300-900 scale), explain what the factors mean,
+and give practical, India-specific advice on improving their score.
+
+STRICT RULES — never break these:
+- NEVER suggest getting a credit card, secured or otherwise
+- NEVER mention credit utilisation, credit card debt, or payment history
+- NEVER suggest checking a CIBIL/credit bureau report for card-related items
+- Users build creditworthiness through: employment stability, income growth,
+  loan sizing, EMI management, and asset ownership (property/vehicle)
+- Be concise, empathetic, and actionable. Avoid jargon.
+- Reference specific features from the user's profile when relevant.
 """
 
 @app.route("/chat", methods=["POST"])

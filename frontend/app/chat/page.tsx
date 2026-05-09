@@ -52,12 +52,12 @@ export default function ChatPage() {
     try {
       const history = messages.slice(-10); // last 10 turns for context
       const scoreContext = result
-        ? {
-            score: result.score,
-            risk: result.risk,
-            top_factors: result.featureImpacts?.slice(0, 3),
-          }
-        : undefined;
+  ? {
+      score: result.score,
+      risk: result.risk_tier,
+      top_factors: result.top_features?.slice(0, 3),
+    }
+  : undefined;
 
       const res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
