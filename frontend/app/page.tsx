@@ -75,7 +75,7 @@ export default function LandingPage() {
   const [activeTab, setActiveTab] = useState("Score");
 
   const handleLogin = () => {
-      window.location.href = "http://localhost:5000/auth/login/google";
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/login/google`;
   };
 
   useEffect(() => {
