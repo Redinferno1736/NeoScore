@@ -3,6 +3,14 @@
  *
  * Schema is aligned 1:1 with backend STUDENT_FEATURES.
  * No translation layer needed — profile fields ARE the API payload.
+ *
+ * FIXES:
+ *  1. API_BASE now correctly reads NEXT_PUBLIC_API_URL at runtime
+ *  2. Removed credentials:"include" from /api/score (public endpoint,
+ *     cross-origin cookies are blocked by browsers anyway)
+ *  3. On error, result is set to null so results page redirects instead
+ *     of showing stale/default data (score 300)
+ *  4. Better error message tells you exactly which URL failed
  */
 
 import { create } from "zustand";
@@ -106,11 +114,10 @@ const DEFAULT_PROFILE: RawProfile = {
 };
 
 // ─── Backend URL ──────────────────────────────────────────────────────────────
-// In production set NEXT_PUBLIC_API_URL in your .env
-const API_BASE =
-  typeof process !== "undefined"
-    ? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"
-    : "http://localhost:5000";
+// NEXT_PUBLIC_* vars are inlined at build time by Next.js.
+// Must be set in Vercel dashboard → Settings → Environment Variables
+// before redeploying, otherwise this falls back to localhost.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -134,13 +141,18 @@ export const useStore = create<NeoScoreState>((set, get) => ({
 
     const profile = get().profile;
 
+    // Log which backend is being used — remove after confirming deployment works
+    console.log("[NeoScore] Sending score request to:", API_BASE);
+
     try {
       const res = await fetch(`${API_BASE}/api/score`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Profile fields ARE the STUDENT_FEATURES — send directly
+        // Profile fields ARE the STUDENT_FEATURES — send directly.
+        // NO credentials:"include" — /api/score is a public endpoint and
+        // cross-origin cookies are blocked by browsers (SameSite=Lax).
+        // credentials are only needed for /auth/* and /score/history routes.
         body: JSON.stringify({ features: profile }),
-        credentials: "include",
       });
 
       if (!res.ok) {
@@ -153,6 +165,9 @@ export const useStore = create<NeoScoreState>((set, get) => ({
       }
 
       const data: ScoreResult = await res.json();
+
+      // Clear result first to avoid any flash of stale data
+      set({ result: null });
       set({ result: data, isLoading: false, error: null });
 
       // Mirror to sessionStorage so results page survives a hard refresh
@@ -160,12 +175,23 @@ export const useStore = create<NeoScoreState>((set, get) => ({
         sessionStorage.setItem("neoscore_result", JSON.stringify(data));
         sessionStorage.setItem("neoscore_features", JSON.stringify(profile));
       } catch {}
+
     } catch (err: any) {
-      const message =
-        err?.message?.includes("fetch")
-          ? "Cannot reach backend — is it running on port 5000?"
-          : err?.message ?? "Scoring failed";
-      set({ isLoading: false, error: message });
+      // Distinguish network failure (env var wrong) from API errors
+      const isNetworkError =
+        err?.message?.includes("fetch") ||
+        err?.message?.includes("Failed to fetch") ||
+        err?.message?.includes("NetworkError") ||
+        err?.message?.includes("CORS");
+
+      const message = isNetworkError
+        ? `Cannot reach backend at ${API_BASE}. If deployed, check NEXT_PUBLIC_API_URL is set on Vercel and redeploy.`
+        : err?.message ?? "Scoring failed";
+
+      // Set result to null so the results page redirects back to /home
+      // instead of showing stale default data (score 300)
+      set({ isLoading: false, error: message, result: null });
+
       throw new Error(message); // re-throw so callers can catch
     }
   },
