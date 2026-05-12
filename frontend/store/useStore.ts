@@ -5,12 +5,12 @@
  * No translation layer needed — profile fields ARE the API payload.
  *
  * FIXES:
- *  1. API_BASE now correctly reads NEXT_PUBLIC_API_URL at runtime
- *  2. Removed credentials:"include" from /api/score (public endpoint,
- *     cross-origin cookies are blocked by browsers anyway)
- *  3. On error, result is set to null so results page redirects instead
- *     of showing stale/default data (score 300)
- *  4. Better error message tells you exactly which URL failed
+ *  1. predict() accepts optional profileOverride so home/page.tsx can
+ *     pass the profile directly — avoids race condition where get().profile
+ *     hasn't updated yet when predict() runs after setProfile()
+ *  2. Removed credentials:"include" from /api/score (public endpoint)
+ *  3. On error, result is set to null so results page redirects correctly
+ *  4. Better error messages for debugging
  */
 
 import { create } from "zustand";
@@ -85,7 +85,10 @@ interface NeoScoreState {
   // Actions
   setProfile: (profile: RawProfile, personaName?: string) => void;
   updateProfileField: <K extends keyof RawProfile>(key: K, value: RawProfile[K]) => void;
-  predict: () => Promise<void>;
+  // profileOverride: pass the profile directly to avoid race condition
+  // where get().profile hasn't updated yet after setProfile().
+  // All existing callers that pass no args continue to work unchanged.
+  predict: (profileOverride?: RawProfile) => Promise<void>;
   clearError: () => void;
   reset: () => void;
 }
@@ -116,7 +119,7 @@ const DEFAULT_PROFILE: RawProfile = {
 // ─── Backend URL ──────────────────────────────────────────────────────────────
 // NEXT_PUBLIC_* vars are inlined at build time by Next.js.
 // Must be set in Vercel dashboard → Settings → Environment Variables
-// before redeploying, otherwise this falls back to localhost.
+// and a fresh deploy triggered for changes to take effect.
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -136,22 +139,24 @@ export const useStore = create<NeoScoreState>((set, get) => ({
       profile: { ...state.profile, [key]: value },
     })),
 
-  predict: async () => {
+  predict: async (profileOverride?: RawProfile) => {
     set({ isLoading: true, error: null });
 
-    const profile = get().profile;
+    // Use override if provided — avoids race condition where store hasn't
+    // updated yet when predict() is called right after setProfile().
+    // Falls back to store profile for what-if simulator and other callers.
+    const profile = profileOverride ?? get().profile;
 
-    // Log which backend is being used — remove after confirming deployment works
     console.log("[NeoScore] Sending score request to:", API_BASE);
+    console.log("[NeoScore] Profile being sent:", JSON.stringify(profile, null, 2));
 
     try {
       const res = await fetch(`${API_BASE}/api/score`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Profile fields ARE the STUDENT_FEATURES — send directly.
-        // NO credentials:"include" — /api/score is a public endpoint and
-        // cross-origin cookies are blocked by browsers (SameSite=Lax).
-        // credentials are only needed for /auth/* and /score/history routes.
+        // No credentials:"include" — /api/score is a public endpoint.
+        // Cross-origin cookies are blocked by browsers (SameSite=Lax).
+        // credentials are only needed for /auth/* and /score/history.
         body: JSON.stringify({ features: profile }),
       });
 
@@ -165,9 +170,8 @@ export const useStore = create<NeoScoreState>((set, get) => ({
       }
 
       const data: ScoreResult = await res.json();
+      console.log("[NeoScore] Score received:", data.score, data.risk_tier);
 
-      // Clear result first to avoid any flash of stale data
-      set({ result: null });
       set({ result: data, isLoading: false, error: null });
 
       // Mirror to sessionStorage so results page survives a hard refresh
@@ -177,7 +181,6 @@ export const useStore = create<NeoScoreState>((set, get) => ({
       } catch {}
 
     } catch (err: any) {
-      // Distinguish network failure (env var wrong) from API errors
       const isNetworkError =
         err?.message?.includes("fetch") ||
         err?.message?.includes("Failed to fetch") ||
@@ -185,14 +188,16 @@ export const useStore = create<NeoScoreState>((set, get) => ({
         err?.message?.includes("CORS");
 
       const message = isNetworkError
-        ? `Cannot reach backend at ${API_BASE}. If deployed, check NEXT_PUBLIC_API_URL is set on Vercel and redeploy.`
+        ? `Cannot reach backend at ${API_BASE}. Check NEXT_PUBLIC_API_URL is set on Vercel and redeploy.`
         : err?.message ?? "Scoring failed";
 
-      // Set result to null so the results page redirects back to /home
+      console.error("[NeoScore] predict() failed:", message);
+
+      // Set result to null so results page redirects back to /home
       // instead of showing stale default data (score 300)
       set({ isLoading: false, error: message, result: null });
 
-      throw new Error(message); // re-throw so callers can catch
+      throw new Error(message);
     }
   },
 

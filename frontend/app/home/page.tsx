@@ -172,18 +172,17 @@ export default function HomePage() {
   const runPredict = async (p: RawProfile, label: string) => {
     setLoadingLabel(label);
     clearError();
-    setProfile(p, label);   // write to store first
+    setProfile(p, label);
 
     try {
-      await predict();      // store.predict() sends store.profile → backend
+      await predict(p);  // ← pass p directly, don't rely on store state
     } catch {
-      // store.error is already set; just stop button spinner
       setLoadingLabel(null);
-      return;               // don't navigate on failure
+      return;
     }
 
     router.push("/results");
-  };
+};
 
   const handlePersonaClick = (persona: typeof DEMO_PERSONAS[0]) =>
     runPredict(persona.profile, persona.name);
